@@ -218,11 +218,17 @@ LIBS += -L/home/felippe/SimpleITK-build/ITK-prefix/lib/ \
 
 SOURCES += \
         affine_registration.cpp \
-        iterationupdate.cpp \
+        bspline_registration.cpp \
+        iterationupdate_affine.cpp \
+        iterationupdate_bspline.cpp \
         main.cpp \
+        multiresolutioniterationupdate.cpp \
         utils_registration.cpp
 
 HEADERS += \
-    Iterationupdate.h \
+    Iterationupdate_affine.h \
     affine_registration.h \
+    bspline_registration.h \
+    iterationupdate_bspline.h \
+    multiresolutioniterationupdate.h \
     utils_registration.h

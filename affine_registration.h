@@ -9,7 +9,7 @@
 #include <cstring>
 #include <algorithm>
 #include <cctype>
-#include "Iterationupdate.h"
+#include "Iterationupdate_affine.h"
 
 namespace sitk = itk::simple;
 

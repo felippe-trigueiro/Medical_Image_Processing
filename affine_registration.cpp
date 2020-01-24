@@ -6,11 +6,12 @@ AffineRegistration::AffineRegistration(sitk::Image f, sitk::Image m)
     set_fixed_volume(f);
     set_moving_volume(m);
 
-    metric = "mi";
-    number_of_histogram_bins = 64;
-    sampling_percentage = 0.1;
-    learning_rate = 1;
-    number_of_iterations = 1000;
+    //Default Values
+    set_metric("mi");
+    set_number_of_histogram_bins(64);
+    set_sampling_percentage(0.1);
+    set_learning_rate(1);
+    set_number_of_iterations(1000);
 }
 
 AffineRegistration::AffineRegistration(sitk::Image f, sitk::Image m, std::string me)
@@ -19,10 +20,11 @@ AffineRegistration::AffineRegistration(sitk::Image f, sitk::Image m, std::string
     set_moving_volume(m);
     set_metric(me);
 
-    number_of_histogram_bins = 64;
-    sampling_percentage = 0.1;
-    learning_rate = 1;
-    number_of_iterations = 1000;
+    //Default Values
+    set_number_of_histogram_bins(64);
+    set_sampling_percentage(0.1);
+    set_learning_rate(1);
+    set_number_of_iterations(1000);
 }
 
 //SET functions
@@ -130,7 +132,12 @@ sitk::Transform AffineRegistration::run()
                                                                           affine_transformation,
                                                                           sitk::CenteredTransformInitializerFilter::GEOMETRY);
     sitk::ImageRegistrationMethod R;
-    R.SetMetricAsMattesMutualInformation(number_of_histogram_bins);
+    if (metric.compare("mi") == 0)
+        R.SetMetricAsMattesMutualInformation(number_of_histogram_bins);
+    else if (metric.compare("ms"))
+        R.SetMetricAsMeanSquares();
+    else if (metric.compare("co"))
+        R.SetMetricAsCorrelation();
     R.SetMetricSamplingStrategy(R.RANDOM);
     R.SetMetricSamplingPercentage(sampling_percentage);
 
@@ -139,7 +146,7 @@ sitk::Transform AffineRegistration::run()
     R.SetOptimizerScalesFromPhysicalShift(); //See the necessity of this
     R.SetInitialTransform(center_transform);
 
-    IterationUpdate cmd(R);
+    IterationUpdateAffine cmd(R);
     R.AddCommand( sitk::sitkIterationEvent, cmd);
 
     std::cout << "Registration Parameters: " << std::endl;
