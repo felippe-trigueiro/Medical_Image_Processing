@@ -137,3 +137,35 @@ void UtilsRegistration::printSpacing(sitk::Image image, std::string image_name)
         std::cout << *i << ' ';
     std::cout << std::endl;
 }
+
+void UtilsRegistration::printMeshSize(std::vector<unsigned int> tms) //tms = Transform Mesh Size
+{
+    std::cout << "Transform Domain Mesh Size: ";
+    for (std::vector<unsigned int>::iterator i = tms.begin(); i != tms.end(); ++i)
+        std::cout << *i << ' ';
+    std::cout << std::endl << std::endl;
+}
+
+sitk::Transform UtilsRegistration::transform_inverse(sitk::Transform inverse)
+{
+    sitk::TransformToDisplacementFieldFilter obj_transformation;
+    sitk::Image disp_field = obj_transformation.Execute(inverse);
+    sitk::InverseDisplacementFieldImageFilter obj_inv;
+    sitk::Image inv_disp_field = obj_inv.Execute(disp_field);
+    sitk::Transform inver_transformation = sitk::DisplacementFieldTransform(inv_disp_field);
+
+    return inver_transformation;
+}
+
+unsigned int UtilsRegistration::returning_label(sitk::Image moving_volume, sitk::Image atlas,
+                                                std::vector<unsigned int> voxels,
+                                                sitk::Transform Affine_inverse,
+                                                sitk::Transform BS_inverse)
+{
+    std::vector<double> physical_voxel = moving_volume.TransformIndexToPhysicalPoint(voxels);
+    std::vector<double> transformed_point = Affine_inverse.TransformPoint(BS_inverse.TransformPoint(physical_voxel))
+    std::vector<unsigned int> atlas_index = atlas.TransformPhysicalPointToIndex(transformed_point);
+    unsigned int label = atlas.GetPixel(fixed_index);
+
+    return label;
+}
