@@ -22,14 +22,14 @@ std::string UtilsRegistration::readMetaData(const std::string path, const std::s
     return field_value;
 }
 
-std::vector<std::string> UtilsRegistration::stringSplit(const std::string input)
+std::vector<std::string> UtilsRegistration::stringSplit(const std::string input, char c)
 {
     std::vector<std::string> splitted_string;
     std::stringstream s_stream(input); //create string stream from the string
     while(s_stream.good())
     {
         std::string substr;
-        getline(s_stream, substr, '\\'); //get first string delimited by comma
+        std::getline(s_stream, substr, c); //get first string delimited by backslash
         splitted_string.push_back(substr);
     }
 
@@ -46,9 +46,9 @@ sitk::Image UtilsRegistration::readDicomSeries(const std::string path)
     std::string origin2 = readMetaData(dicom_names[1], "0020|0032");
     std::string pixel_spacing = readMetaData(dicom_names[0], "0028|0030");
 
-    std::vector<std::string> splitted_origin1 = stringSplit(origin1);
-    std::vector<std::string> splitted_origin2 = stringSplit(origin2);
-    std::vector<std::string> splitted_pixel_spacing = stringSplit(pixel_spacing);
+    std::vector<std::string> splitted_origin1 = stringSplit(origin1, ' ');
+    std::vector<std::string> splitted_origin2 = stringSplit(origin2, ' ');
+    std::vector<std::string> splitted_pixel_spacing = stringSplit(pixel_spacing, ' ');
 
     std::vector<double> spacing(3);
 
@@ -157,15 +157,42 @@ sitk::Transform UtilsRegistration::transform_inverse(sitk::Transform inverse)
     return inver_transformation;
 }
 
-unsigned int UtilsRegistration::returning_label(sitk::Image moving_volume, sitk::Image atlas,
-                                                std::vector<unsigned int> voxels,
+float UtilsRegistration::returning_label(sitk::Image moving_volume, sitk::Image atlas,
+                                                std::vector<int64_t> voxels,
                                                 sitk::Transform Affine_inverse,
                                                 sitk::Transform BS_inverse)
 {
     std::vector<double> physical_voxel = moving_volume.TransformIndexToPhysicalPoint(voxels);
-    std::vector<double> transformed_point = Affine_inverse.TransformPoint(BS_inverse.TransformPoint(physical_voxel))
-    std::vector<unsigned int> atlas_index = atlas.TransformPhysicalPointToIndex(transformed_point);
-    unsigned int label = atlas.GetPixel(fixed_index);
+    std::cout << physical_voxel[0] << " " << physical_voxel[1] << " " << physical_voxel[2] << std::endl;
+    std::vector<double> transformed_point = Affine_inverse.TransformPoint(BS_inverse.TransformPoint(physical_voxel));
+    std::cout << transformed_point[0] << " " << transformed_point[1] << " " << transformed_point[2] << std::endl;
+    std::vector<int64_t> atlas_index = atlas.TransformPhysicalPointToIndex(transformed_point);
+    std::cout << atlas_index[0] << " " << atlas_index[1] << " " << atlas_index[2] << std::endl;
+    std::vector<uint32_t> atlas_index32(atlas_index.begin(), atlas_index.end());
+    float label = atlas.GetPixelAsFloat(atlas_index32);
 
     return label;
+}
+
+std::map<int, std::string> UtilsRegistration::readTalairachLabels(std::string path)
+{
+    std::map<int, std::string> talairach_labels;
+
+    std::ifstream infile(path.c_str());
+    int label;
+    std::string brain_region;
+
+    if(infile.is_open())
+    {
+        while (std::getline(infile, brain_region, '\r'))
+        {
+            std::vector<std::string> number_region = stringSplit(brain_region, '\t');
+
+            label = atoi(number_region[0].c_str());
+            brain_region = number_region[1];
+            talairach_labels[label] = brain_region;
+        }
+        infile.close();
+    }
+    return talairach_labels;
 }
